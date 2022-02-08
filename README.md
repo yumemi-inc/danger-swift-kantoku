@@ -1,0 +1,1 @@
+# danger-swift-xcresult-reporter

@@ -1,11 +1,11 @@
 import XCTest
-@testable import DangerSwiftXCResultReporter
+@testable import DangerSwiftKantoku
 
-final class danger_swift_xcresult_reporterTests: XCTestCase {
+final class DangerSwiftKantokuTests: XCTestCase {
     func testExample() throws {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct
         // results.
-        XCTAssertEqual(DangerSwiftXCResultReporter().text, "Hello, World!")
+        XCTAssertEqual(DangerSwiftKantoku().text, "Hello, World!")
     }
 }

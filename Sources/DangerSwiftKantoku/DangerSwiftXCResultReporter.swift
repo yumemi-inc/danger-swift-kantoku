@@ -1,4 +1,4 @@
-public struct DangerSwiftXCResultReporter {
+public struct DangerSwiftKantoku {
     public private(set) var text = "Hello, World!"
 
     public init() {

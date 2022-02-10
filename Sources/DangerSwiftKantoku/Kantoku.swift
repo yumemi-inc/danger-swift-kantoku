@@ -124,7 +124,6 @@ extension Kantoku {
                     let message = warning.message
                     let filePath = warning.documentLocationInCreatingWorkspace?.relativePath(against: workingDirectoryPath)
                     if let filePath = filePath, let lineNumber = filePath.queries.endingLineNumber {
-                        comment("message: \(message), filePath: \(filePath.filePath), lineNumber: \(lineNumber)")
                         warn(message, to: filePath.filePath, at: lineNumber)
                     } else {
                         warn(message)

@@ -85,7 +85,7 @@ extension DocumentLocation {
         let absoluteFilePath = regularAbsoluteFilePath(of: url)
         let baseFilePath = regularAbsoluteFilePath(of: baseFilePath)
         guard absoluteFilePath.hasPrefix(baseFilePath) else {
-            assertionFailure(#"Unable to find relative path of "\#(url)" against "\#(baseFilePath)" "#)
+//            assertionFailure(#"Unable to find relative path of "\#(url)" against "\#(baseFilePath)" "#)
             return (url, .empty)
         }
         

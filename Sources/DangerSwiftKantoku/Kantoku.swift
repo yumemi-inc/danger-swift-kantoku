@@ -124,7 +124,8 @@ extension Kantoku {
                     let message = warning.message
                     let filePath = warning.documentLocationInCreatingWorkspace?.relativePath(against: workingDirectoryPath)
                     if let filePath = filePath, let lineNumber = filePath.queries.endingLineNumber {
-                        warn(message, to: filePath.filePath, at: lineNumber)
+                        // Line numbers in XCResult starts from `0`, while on web pages like GitHub starts from `1`
+                        warn(message, to: filePath.filePath, at: lineNumber + 1)
                     } else {
                         warn(message)
                     }

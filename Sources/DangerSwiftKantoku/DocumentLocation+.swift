@@ -16,7 +16,6 @@ extension DocumentLocation {
         var endingLineNumber: Int?
         var endingColumnNumber: Int?
         var characterRangeLen: Int?
-        static var empty: FileQueries { .init() }
     }
     
 }
@@ -54,10 +53,10 @@ extension DocumentLocation {
         
     }
     
-    private func extractingQueries(from path: Substring) -> (filePath: String, queries: FileQueries) {
+    private func extractingQueries(from path: Substring) -> (filePath: String, queries: FileQueries?) {
         
         guard let querySeparatorIndex = path.firstIndex(where: { $0 == "#" }) else {
-            return (String(path), .empty)
+            return (String(path), nil)
         }
         
         let filePath = String(path[..<querySeparatorIndex])
@@ -80,13 +79,15 @@ extension DocumentLocation {
         
     }
     
-    func relativePath(against baseFilePath: String) -> (filePath: String, queries: FileQueries) {
+    func relativePath(against baseFilePath: String) -> (filePath: String, queries: FileQueries?) {
         
         let absoluteFilePath = regularAbsoluteFilePath(of: url)
         let baseFilePath = regularAbsoluteFilePath(of: baseFilePath)
         guard absoluteFilePath.hasPrefix(baseFilePath) else {
-//            assertionFailure(#"Unable to find relative path of "\#(url)" against "\#(baseFilePath)" "#)
-            return (url, .empty)
+            // The given file is outside of the repository.
+            // This may happen when DerivedData path setting is not Relative.
+            assert(absoluteFilePath.contains("/DerivedData/"))
+            return (url, nil)
         }
         
         let relativePath = absoluteFilePath.dropFirst(baseFilePath.count)

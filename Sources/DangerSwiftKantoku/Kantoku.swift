@@ -71,44 +71,60 @@ extension Kantoku {
 
 extension Kantoku {
     
-    typealias FileLocation = (filePath: String, lineNumber: Int)
+    private enum CommentLevel {
+        case comment
+        case warning
+        case failure
+    }
     
-    func comment(_ message: String, at fileLocation: FileLocation?) {
+    private func post(as level: CommentLevel) -> (_ message: String) -> Void {
         
-        if let fileLocation = fileLocation {
-            comment(message, to: fileLocation.filePath, at: fileLocation.lineNumber)
+        switch level {
+        case .comment:
+            return comment(_:)
             
-        } else {
-            comment(message)
+        case .warning:
+            return warn(_:)
+            
+        case .failure:
+            return fail(_:)
         }
         
     }
     
-    func warn(_ warning: String, at fileLocation: FileLocation?) {
+    private func post(as level: CommentLevel) -> (_ message: String, _ filePath: String, _ lineNumber: Int) -> Void {
         
-        if let fileLocation = fileLocation {
-            warn(warning, to: fileLocation.filePath, at: fileLocation.lineNumber)
+        switch level {
+        case .comment:
+            return comment(_:to:at:)
             
-        } else {
-            warn(warning)
+        case .warning:
+            return warn(_:to:at:)
+            
+        case .failure:
+            return fail(_:to:at:)
         }
         
     }
     
-    func fail(_ failure: String, at fileLocation: FileLocation?) {
+    private func post(_ summaries: [PostableIssueSummary], as level: CommentLevel) {
         
-        if let fileLocation = fileLocation {
-            fail(failure, to: fileLocation.filePath, at: fileLocation.lineNumber)
+        for summary in summaries {
+            let message = summary.issueMessage
+            let filePath = summary.documentLocation?.relativePath(against: workingDirectoryPath)
             
-        } else {
-            fail(failure)
+            if let filePath = filePath {
+                let lineNumber = filePath.queries?.endingLineNumber
+                // Line numbers in XCResult starts from `0`, while on web pages like GitHub starts from `1`
+                post(as: level)(message, filePath.filePath, lineNumber.map({ $0 + 1 }) ?? 0)
+                
+            } else {
+                post(as: level)(message)
+            }
+            
         }
         
     }
-    
-}
-
-extension Kantoku {
     
     public func parseXCResultFile(at filePath: String, configuration: XCResultParsingConfiguration) {
         
@@ -120,16 +136,19 @@ extension Kantoku {
             }
             
             if configuration.parseBuildWarnings {
-                for warning in issues.warningSummaries {
-                    let message = warning.message
-                    let filePath = warning.documentLocationInCreatingWorkspace?.relativePath(against: workingDirectoryPath)
-                    if let filePath = filePath, let lineNumber = filePath.queries.endingLineNumber {
-                        // Line numbers in XCResult starts from `0`, while on web pages like GitHub starts from `1`
-                        warn(message, to: filePath.filePath, at: lineNumber + 1)
-                    } else {
-                        warn(message)
-                    }
-                }
+                post(issues.warningSummaries, as: .warning)
+            }
+            
+            if configuration.parseBuildErrors {
+                post(issues.errorSummaries, as: .failure)
+            }
+            
+            if configuration.parseAnalyzerWarnings {
+                post(issues.analyzerWarningSummaries, as: .warning)
+            }
+            
+            if configuration.parseTestFailures {
+                post(issues.testFailureSummaries, as: .failure)
             }
             
         }

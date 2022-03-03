@@ -12,6 +12,8 @@ public struct Kantoku {
     
     let workingDirectoryPath: String
     
+    private let markdownCommentExecutor: (_ comment: String) -> Void
+    
     private let inlineCommentExecutor: (_ comment: String, _ filePath: String, _ lineNumber: Int) -> Void
     private let normalCommentExecutor: (_ comment: String) -> Void
     
@@ -23,6 +25,7 @@ public struct Kantoku {
     
     init(
         workingDirectoryPath: String,
+        markdownCommentExecutor: @escaping (_ comment: String) -> Void,
         inlineCommentExecutor: @escaping (_ comment: String, _ filePath: String, _ lineNumber: Int) -> Void,
         normalCommentExecutor: @escaping (_ comment: String) -> Void,
         inlineWarningExecutor: @escaping (_ comment: String, _ filePath: String, _ lineNumber: Int) -> Void,
@@ -31,6 +34,7 @@ public struct Kantoku {
         normalFailureExecutor: @escaping (_ comment: String) -> Void
     ) {
         self.workingDirectoryPath = workingDirectoryPath
+        self.markdownCommentExecutor = markdownCommentExecutor
         self.inlineCommentExecutor = inlineCommentExecutor
         self.normalCommentExecutor = normalCommentExecutor
         self.inlineWarningExecutor = inlineWarningExecutor
@@ -42,6 +46,10 @@ public struct Kantoku {
 }
 
 extension Kantoku {
+    
+    func markdown(_ comment: String) {
+        markdownCommentExecutor(comment)
+    }
     
     func comment(_ comment: String, to filePath: String, at lineNumber: Int) {
         inlineCommentExecutor(comment, filePath, lineNumber)
@@ -100,12 +108,50 @@ extension Kantoku {
         
     }
     
+    private func postCoverageIfNeeded(from resultFile: XCResultFile, configuration: XCResultParsingConfiguration) {
+        
+        if let coverageAcceptanceDecision = configuration.codeCoverageRequirement.acceptanceDecision {
+            
+            guard let coverage = resultFile.getCodeCoverage() else {
+                warn("Failed to get coverage from \(resultFile.url.absoluteString)")
+                return
+            }
+            
+            post(coverage, as: coverageAcceptanceDecision)
+            
+        }
+        
+    }
+    
     public func parseXCResultFile(at filePath: String, configuration: XCResultParsingConfiguration) {
         
         let resultFile = XCResultFile(url: .init(fileURLWithPath: filePath))
         
         postIssuesIfNeeded(from: resultFile, configuration: configuration)
+        postCoverageIfNeeded(from: resultFile, configuration: configuration)
         
+    }
+    
+}
+
+extension XCResultParsingConfiguration.CodeCoverageRequirement {
+    
+    var acceptanceDecision: ((Double) -> Kantoku.CoverageAcceptance)? {
+        switch self {
+        case .none:
+            return nil
+            
+        case .required(let threshold):
+            return { coverage in
+                if coverage >= threshold.recommended {
+                    return .good
+                } else if coverage >= threshold.acceptable {
+                    return .acceptable
+                } else {
+                    return .reject
+                }
+            }
+        }
     }
     
 }

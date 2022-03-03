@@ -71,67 +71,12 @@ extension Kantoku {
 
 extension Kantoku {
     
-    private enum CommentLevel {
-        case comment
-        case warning
-        case failure
-    }
-    
-    private func post(as level: CommentLevel) -> (_ message: String) -> Void {
+    private func postIssuesIfNeeded(from resultFile: XCResultFile, configuration: XCResultParsingConfiguration) {
         
-        switch level {
-        case .comment:
-            return comment(_:)
-            
-        case .warning:
-            return warn(_:)
-            
-        case .failure:
-            return fail(_:)
-        }
-        
-    }
-    
-    private func post(as level: CommentLevel) -> (_ message: String, _ filePath: String, _ lineNumber: Int) -> Void {
-        
-        switch level {
-        case .comment:
-            return comment(_:to:at:)
-            
-        case .warning:
-            return warn(_:to:at:)
-            
-        case .failure:
-            return fail(_:to:at:)
-        }
-        
-    }
-    
-    private func post(_ summaries: [PostableIssueSummary], as level: CommentLevel) {
-        
-        for summary in summaries {
-            let message = summary.issueMessage
-            let filePath = summary.documentLocation?.relativePath(against: workingDirectoryPath)
-            
-            if let filePath = filePath {
-                let lineNumber = filePath.queries?.endingLineNumber
-                // Line numbers in XCResult starts from `0`, while on web pages like GitHub starts from `1`
-                post(as: level)(message, filePath.filePath, lineNumber.map({ $0 + 1 }) ?? 0)
-                
-            } else {
-                post(as: level)(message)
-            }
-            
-        }
-        
-    }
-    
-    public func parseXCResultFile(at filePath: String, configuration: XCResultParsingConfiguration) {
-        
-        let resultFile = XCResultFile(url: .init(fileURLWithPath: filePath))
         if configuration.needsIssues {
+            
             guard let issues = resultFile.getInvocationRecord()?.issues else {
-                warn("Failed to get invocation record from \(filePath)")
+                warn("Failed to get invocation record from \(resultFile.url.absoluteString)")
                 return
             }
             
@@ -152,6 +97,14 @@ extension Kantoku {
             }
             
         }
+        
+    }
+    
+    public func parseXCResultFile(at filePath: String, configuration: XCResultParsingConfiguration) {
+        
+        let resultFile = XCResultFile(url: .init(fileURLWithPath: filePath))
+        
+        postIssuesIfNeeded(from: resultFile, configuration: configuration)
         
     }
     

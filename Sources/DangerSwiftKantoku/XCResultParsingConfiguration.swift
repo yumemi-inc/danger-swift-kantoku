@@ -38,7 +38,7 @@ extension XCResultParsingConfiguration {
 
 extension XCResultParsingConfiguration {
     
-    public var needsIssues: Bool {
+    var needsIssues: Bool {
         parseBuildWarnings || parseBuildErrors || parseAnalyzerWarnings || parseTestFailures
     }
     

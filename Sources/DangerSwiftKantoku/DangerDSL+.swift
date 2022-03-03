@@ -12,6 +12,7 @@ extension DangerDSL {
     public var kantoku: Kantoku {
         .init(
             workingDirectoryPath: utils.exec("pwd"),
+            markdownCommentExecutor: { markdown($0) },
             inlineCommentExecutor: { message(message: $0, file: $1, line: $2) },
             normalCommentExecutor: { message($0) },
             inlineWarningExecutor: { warn(message: $0, file: $1, line: $2) },

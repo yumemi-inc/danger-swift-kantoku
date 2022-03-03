@@ -54,6 +54,17 @@ extension Kantoku {
         ]
         markdown(markdownLines.joined(separator: "\n"))
         
+        switch overallAcceptance {
+        case .good:
+            break
+            
+        case .acceptable:
+            warn("Overall coverage is \(overallCoverage)")
+            
+        case .reject:
+            fail("Overall coverage is \(overallCoverage), which is not enough")
+        }
+        
     }
     
 }

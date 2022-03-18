@@ -9,21 +9,38 @@ import Foundation
 
 public struct XCResultParsingConfiguration {
     
+    public enum CodeCoverageRequirement {
+        public struct CoverageThreshold {
+            public var acceptable: Double
+            public var recommended: Double
+            public init(acceptable: Double, recommended: Double) {
+                self.acceptable = acceptable
+                self.recommended = recommended
+            }
+        }
+        case none
+        case required(CoverageThreshold)
+    }
+    
     public var parseBuildWarnings: Bool
     public var parseBuildErrors: Bool
     public var parseAnalyzerWarnings: Bool
     public var parseTestFailures: Bool
     
+    public var codeCoverageRequirement: CodeCoverageRequirement
+    
     public init(
         parseBuildWarnings: Bool = true,
         parseBuildErrors: Bool = true,
         parseAnalyzerWarnings: Bool = true,
-        parseTestFailures: Bool = true
+        parseTestFailures: Bool = true,
+        codeCoverageRequirement: CodeCoverageRequirement = .required(.init(acceptable: 0, recommended: 0.6))
     ) {
         self.parseBuildWarnings = parseBuildWarnings
         self.parseBuildErrors = parseBuildErrors
         self.parseAnalyzerWarnings = parseAnalyzerWarnings
         self.parseTestFailures = parseTestFailures
+        self.codeCoverageRequirement = codeCoverageRequirement
     }
     
 }
@@ -38,7 +55,7 @@ extension XCResultParsingConfiguration {
 
 extension XCResultParsingConfiguration {
     
-    public var needsIssues: Bool {
+    var needsIssues: Bool {
         parseBuildWarnings || parseBuildErrors || parseAnalyzerWarnings || parseTestFailures
     }
     

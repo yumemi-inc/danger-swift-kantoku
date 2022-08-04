@@ -7,6 +7,7 @@
 
 import Foundation
 import XCResultKit
+import Danger
 
 public struct Kantoku {
     
@@ -77,9 +78,23 @@ extension Kantoku {
     
 }
 
+public typealias File = String
+extension File {
+    var finalFileName: String {
+        return self.components(separatedBy: "/").last ?? ""
+
+    }
+}
+
 extension Kantoku {
     
-    private func postIssuesIfNeeded(from resultFile: XCResultFile, configuration: XCResultParsingConfiguration) {
+    public enum WariningFilter {
+        case all
+        case modifiedAndCreatedFiles
+        case files([File])
+    }
+    
+    private func postIssuesIfNeeded(from resultFile: XCResultFile, configuration: XCResultParsingConfiguration, warnFor: WariningFilter = .all) {
         
         if configuration.needsIssues {
             
@@ -87,9 +102,19 @@ extension Kantoku {
                 warn("Failed to get invocation record from \(resultFile.url.absoluteString)")
                 return
             }
-            
+
+            var targetFileNames: [String]? = nil
+            switch warnFor {
+            case .all : break
+            case .files(let files) :
+                targetFileNames = files.map{ $0.finalFileName }
+            case .modifiedAndCreatedFiles :
+                let allFilePaths = Danger().git.modifiedFiles + Danger().git.createdFiles
+                targetFileNames = allFilePaths.map { $0.finalFileName }
+            }
+
             if configuration.parseBuildWarnings {
-                post(issues.warningSummaries, as: .warning)
+                post(issues.warningSummaries, as: .warning, targetFilesNmes: targetFileNames)
             }
             
             if configuration.parseBuildErrors {
@@ -123,11 +148,11 @@ extension Kantoku {
         
     }
     
-    public func parseXCResultFile(at filePath: String, configuration: XCResultParsingConfiguration) {
+    public func parseXCResultFile(at filePath: String, configuration: XCResultParsingConfiguration, warnFor: WariningFilter) {
         
         let resultFile = XCResultFile(url: .init(fileURLWithPath: filePath))
         
-        postIssuesIfNeeded(from: resultFile, configuration: configuration)
+        postIssuesIfNeeded(from: resultFile, configuration: configuration, warnFor: warnFor)
         postCoverageIfNeeded(from: resultFile, configuration: configuration)
         
     }

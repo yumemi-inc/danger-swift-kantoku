@@ -7,11 +7,12 @@
 
 import Foundation
 import XCResultKit
-import Danger
 
 public struct Kantoku {
     
     let workingDirectoryPath: String
+    let modifiedFiles: [String]
+    let createdFiles: [String]
     
     private let markdownCommentExecutor: (_ comment: String) -> Void
     
@@ -26,6 +27,8 @@ public struct Kantoku {
     
     init(
         workingDirectoryPath: String,
+        modifiedFiles: [String],
+        createdFiles: [String],
         markdownCommentExecutor: @escaping (_ comment: String) -> Void,
         inlineCommentExecutor: @escaping (_ comment: String, _ filePath: String, _ lineNumber: Int) -> Void,
         normalCommentExecutor: @escaping (_ comment: String) -> Void,
@@ -35,6 +38,8 @@ public struct Kantoku {
         normalFailureExecutor: @escaping (_ comment: String) -> Void
     ) {
         self.workingDirectoryPath = workingDirectoryPath
+        self.modifiedFiles = modifiedFiles
+        self.createdFiles = createdFiles
         self.markdownCommentExecutor = markdownCommentExecutor
         self.inlineCommentExecutor = inlineCommentExecutor
         self.normalCommentExecutor = normalCommentExecutor
@@ -78,23 +83,11 @@ extension Kantoku {
     
 }
 
-public typealias File = String
-extension File {
-    var finalFileName: String {
-        return self.components(separatedBy: "/").last ?? ""
 
-    }
-}
 
 extension Kantoku {
     
-    public enum WariningFilter {
-        case all
-        case modifiedAndCreatedFiles
-        case files([File])
-    }
-    
-    private func postIssuesIfNeeded(from resultFile: XCResultFile, configuration: XCResultParsingConfiguration, warnFor: WariningFilter = .all) {
+    private func postIssuesIfNeeded(from resultFile: XCResultFile, configuration: XCResultParsingConfiguration) {
         
         if configuration.needsIssues {
             
@@ -103,18 +96,9 @@ extension Kantoku {
                 return
             }
 
-            var targetFileNames: [String]? = nil
-            switch warnFor {
-            case .all : break
-            case .files(let files) :
-                targetFileNames = files.map{ $0.finalFileName }
-            case .modifiedAndCreatedFiles :
-                let allFilePaths = Danger().git.modifiedFiles + Danger().git.createdFiles
-                targetFileNames = allFilePaths.map { $0.finalFileName }
-            }
-
             if configuration.parseBuildWarnings {
-                post(issues.warningSummaries, as: .warning, targetFilesNmes: targetFileNames)
+                let filteredSummaries = summaries(of: issues.warningSummaries, filteredBy:  configuration.reportingFileType)
+                post(filteredSummaries, as: .warning)
             }
             
             if configuration.parseBuildErrors {
@@ -148,11 +132,11 @@ extension Kantoku {
         
     }
     
-    public func parseXCResultFile(at filePath: String, configuration: XCResultParsingConfiguration, warnFor: WariningFilter) {
+    public func parseXCResultFile(at filePath: String, configuration: XCResultParsingConfiguration) {
         
         let resultFile = XCResultFile(url: .init(fileURLWithPath: filePath))
         
-        postIssuesIfNeeded(from: resultFile, configuration: configuration, warnFor: warnFor)
+        postIssuesIfNeeded(from: resultFile, configuration: configuration)
         postCoverageIfNeeded(from: resultFile, configuration: configuration)
         
     }
@@ -179,4 +163,32 @@ extension XCResultParsingConfiguration.CodeCoverageRequirement {
         }
     }
     
+}
+
+extension Kantoku {
+
+    private func summaries<T: PostableIssueSummary>(of summaries: [T], filteredBy fileType: XCResultParsingConfiguration.ReportingFileType) -> [T] {
+
+        let filteringPredicate: (XCResultParsingConfiguration.RelativeFilePath) -> Bool
+
+        switch fileType {
+        case .all:
+            return summaries
+
+        case .modifiedAndCreatedFiles:
+            filteringPredicate = { (modifiedFiles + createdFiles).contains($0) }
+
+        case .custom(predicate: let predicate):
+            filteringPredicate = predicate
+        }
+
+        return summaries.filter { summary in
+            guard let relativePath = summary.documentLocation?.relativePath(against: workingDirectoryPath) else {
+                return false
+            }
+            return filteringPredicate(relativePath.filePath)
+        }
+
+    }
+
 }

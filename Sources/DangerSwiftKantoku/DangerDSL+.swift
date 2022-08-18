@@ -12,6 +12,8 @@ extension DangerDSL {
     public var kantoku: Kantoku {
         .init(
             workingDirectoryPath: utils.exec("pwd"),
+            modifiedFiles: git.modifiedFiles,
+            createdFiles: git.createdFiles,
             markdownCommentExecutor: { markdown($0) },
             inlineCommentExecutor: { message(message: $0, file: $1, line: $2) },
             normalCommentExecutor: { message($0) },

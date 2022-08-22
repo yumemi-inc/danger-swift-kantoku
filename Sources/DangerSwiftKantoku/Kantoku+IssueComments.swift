@@ -46,11 +46,10 @@ extension Kantoku {
     }
     
     func post(_ summaries: [PostableIssueSummary], as level: CommentLevel) {
-        
         for summary in summaries {
             let message = summary.issueMessage
             let filePath = summary.documentLocation?.relativePath(against: workingDirectoryPath)
-            
+
             if let filePath = filePath {
                 let lineNumber = filePath.queries?.endingLineNumber
                 // Line numbers in XCResult starts from `0`, while on web pages like GitHub starts from `1`
@@ -63,5 +62,5 @@ extension Kantoku {
         }
         
     }
-    
+
 }

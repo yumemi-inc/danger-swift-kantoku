@@ -11,6 +11,8 @@ import XCResultKit
 public struct Kantoku {
     
     let workingDirectoryPath: String
+    let modifiedFiles: [String]
+    let createdFiles: [String]
     
     private let markdownCommentExecutor: (_ comment: String) -> Void
     
@@ -25,6 +27,8 @@ public struct Kantoku {
     
     init(
         workingDirectoryPath: String,
+        modifiedFiles: [String],
+        createdFiles: [String],
         markdownCommentExecutor: @escaping (_ comment: String) -> Void,
         inlineCommentExecutor: @escaping (_ comment: String, _ filePath: String, _ lineNumber: Int) -> Void,
         normalCommentExecutor: @escaping (_ comment: String) -> Void,
@@ -34,6 +38,8 @@ public struct Kantoku {
         normalFailureExecutor: @escaping (_ comment: String) -> Void
     ) {
         self.workingDirectoryPath = workingDirectoryPath
+        self.modifiedFiles = modifiedFiles
+        self.createdFiles = createdFiles
         self.markdownCommentExecutor = markdownCommentExecutor
         self.inlineCommentExecutor = inlineCommentExecutor
         self.normalCommentExecutor = normalCommentExecutor
@@ -77,6 +83,8 @@ extension Kantoku {
     
 }
 
+
+
 extension Kantoku {
     
     private func postIssuesIfNeeded(from resultFile: XCResultFile, configuration: XCResultParsingConfiguration) {
@@ -87,9 +95,10 @@ extension Kantoku {
                 warn("Failed to get invocation record from \(resultFile.url.absoluteString)")
                 return
             }
-            
+
             if configuration.parseBuildWarnings {
-                post(issues.warningSummaries, as: .warning)
+                let filteredSummaries = summaries(of: issues.warningSummaries, filteredBy:  configuration.reportingFileType)
+                post(filteredSummaries, as: .warning)
             }
             
             if configuration.parseBuildErrors {
@@ -154,4 +163,32 @@ extension XCResultParsingConfiguration.CodeCoverageRequirement {
         }
     }
     
+}
+
+extension Kantoku {
+
+    private func summaries<T: PostableIssueSummary>(of summaries: [T], filteredBy fileType: XCResultParsingConfiguration.ReportingFileType) -> [T] {
+
+        let filteringPredicate: (XCResultParsingConfiguration.RelativeFilePath) -> Bool
+
+        switch fileType {
+        case .all:
+            return summaries
+
+        case .modifiedAndCreatedFiles:
+            filteringPredicate = { (modifiedFiles + createdFiles).contains($0) }
+
+        case .custom(predicate: let predicate):
+            filteringPredicate = predicate
+        }
+
+        return summaries.filter { summary in
+            guard let relativePath = summary.documentLocation?.relativePath(against: workingDirectoryPath) else {
+                return false
+            }
+            return filteringPredicate(relativePath.filePath)
+        }
+
+    }
+
 }

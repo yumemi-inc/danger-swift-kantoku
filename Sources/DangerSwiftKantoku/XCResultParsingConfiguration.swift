@@ -66,19 +66,21 @@ public struct XCResultParsingConfiguration {
         shouldFailIfCoverageUnavailable: Bool = false,
         codeCoverageRequirement: CodeCoverageRequirement = .required(.init(acceptable: 0, recommended: 0.6)),
         excludeCoverageTarget: [ExcludedTarget] = [],
-        showCoverageForChangedFiles: Bool = true,
-        excludeCoverageForFiles: @escaping ((RelativeFilePath) -> Bool) = { _ in return false }
+        excludeCoverageForFiles: @escaping ((RelativeFilePath) -> Bool) = { _ in return false },
+        showCoverageForChangedFiles: Bool = true
     ) {
         self.parseBuildWarnings = parseBuildWarnings
         self.parseBuildErrors = parseBuildErrors
         self.parseAnalyzerWarnings = parseAnalyzerWarnings
         self.parseTestFailures = parseTestFailures
         self.reportingFileType = reportingFileType
+        
         self.codeCoverageRequirement = codeCoverageRequirement
         self.failIfCoverageUnavailable = shouldFailIfCoverageUnavailable
         self.excludeCoverageTarget = excludeCoverageTarget
-        self.showCoverageForChangedFiles = showCoverageForChangedFiles
         self.excludeCoverageForFiles = excludeCoverageForFiles
+        self.showCoverageForChangedFiles = showCoverageForChangedFiles
+        
     }
     
 }

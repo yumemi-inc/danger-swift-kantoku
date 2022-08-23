@@ -79,6 +79,8 @@ extension Kantoku {
     }
 }
 
+
+
 extension Kantoku {
     private func postIssuesIfNeeded(from resultFile: XCResultFile, configuration: XCResultParsingConfiguration) {
         if configuration.needsIssues {
@@ -181,4 +183,32 @@ extension Kantoku {
             return filteringPredicate(relativePath.filePath)
         }
     }
+}
+
+extension Kantoku {
+
+    private func summaries<T: PostableIssueSummary>(of summaries: [T], filteredBy fileType: XCResultParsingConfiguration.ReportingFileType) -> [T] {
+
+        let filteringPredicate: (XCResultParsingConfiguration.RelativeFilePath) -> Bool
+
+        switch fileType {
+        case .all:
+            return summaries
+
+        case .modifiedAndCreatedFiles:
+            filteringPredicate = { (modifiedFiles + createdFiles).contains($0) }
+
+        case .custom(predicate: let predicate):
+            filteringPredicate = predicate
+        }
+
+        return summaries.filter { summary in
+            guard let relativePath = summary.documentLocation?.relativePath(against: workingDirectoryPath) else {
+                return false
+            }
+            return filteringPredicate(relativePath.filePath)
+        }
+
+    }
+
 }

@@ -53,7 +53,7 @@ extension Kantoku {
             if let filePath = filePath {
                 let lineNumber = filePath.queries?.endingLineNumber
                 // Line numbers in XCResult starts from `0`, while on web pages like GitHub starts from `1`
-                post(as: level)(message, filePath.filePath, lineNumber.map({ $0 + 1 }) ?? 0)
+                post(as: .comment)(message, filePath.filePath, lineNumber.map({ $0 + 1 }) ?? 0)
             } else {
                 post(as: level)(message)
             }

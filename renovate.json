@@ -12,6 +12,7 @@
   ],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 3,
+  "reviewers": ["team:yumemi-inc/ios_wg_s13n"],
   "customManagers": [
     {
       "customType": "regex",

@@ -86,7 +86,7 @@ extension DocumentLocation {
         guard absoluteFilePath.hasPrefix(baseFilePath) else {
             // The given file is outside of the repository.
             // This may happen when DerivedData path setting is not Relative.
-            assert(absoluteFilePath.contains("/DerivedData/"))
+            // assert(absoluteFilePath.contains("/DerivedData/"))
             return (url, nil)
         }
         

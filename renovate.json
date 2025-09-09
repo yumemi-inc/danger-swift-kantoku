@@ -12,13 +12,15 @@
   ],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 3,
-  "reviewers": ["team:yumemi-inc/ios_wg_s13n"],
+  "reviewers": [
+    "team:yumemi-inc/ios_wg_s13n"
+  ],
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": [
-        "(^|/)project\\.ya?ml$",
-        "(^|/)[Xx]code[Gg]en/.+\\.ya?ml$"
+      "managerFilePatterns": [
+        "/(^|/)project\\.ya?ml$/",
+        "/(^|/)[Xx]code[Gg]en/.+\\.ya?ml$/"
       ],
       "matchStrings": [
         "url: https:\\/\\/github\\.com\\/(?<depName>.*?)(\\.git)?\\s*version: ['\"]?(?<currentValue>[^'\"]+?)['\"]?\\s",

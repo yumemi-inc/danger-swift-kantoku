@@ -7,6 +7,20 @@
 
 import Foundation
 
+public enum ExcludedTarget: Equatable {
+    case exact(String)
+    case regex(String)
+
+    func matches(string: String) -> Bool {
+        switch self {
+        case let .exact(needle):
+            return string == needle
+        case let .regex(regex):
+            return string.range(of: regex, options: .regularExpression) != nil
+        }
+    }
+}
+
 public struct XCResultParsingConfiguration {
 
     public typealias RelativeFilePath = String
@@ -34,24 +48,39 @@ public struct XCResultParsingConfiguration {
     public var parseBuildErrors: Bool
     public var parseAnalyzerWarnings: Bool
     public var parseTestFailures: Bool
-    
-    public var codeCoverageRequirement: CodeCoverageRequirement
     public var reportingFileType: ReportingFileType
-    
+
+    // code coverage
+    public var codeCoverageRequirement: CodeCoverageRequirement
+    public var excludeCoverageTarget: [ExcludedTarget]
+    public var excludeCoverageForFiles: ((RelativeFilePath) -> Bool)
+    public var failIfCoverageUnavailable: Bool
+    public var showCoverageForChangedFiles: Bool
+
     public init(
         parseBuildWarnings: Bool = true,
         parseBuildErrors: Bool = true,
         parseAnalyzerWarnings: Bool = true,
         parseTestFailures: Bool = true,
+        reportingFileType: ReportingFileType = .all,
+        shouldFailIfCoverageUnavailable: Bool = false,
         codeCoverageRequirement: CodeCoverageRequirement = .required(.init(acceptable: 0, recommended: 0.6)),
-        reportingFileType: ReportingFileType = .all
+        excludeCoverageTarget: [ExcludedTarget] = [],
+        excludeCoverageForFiles: @escaping ((RelativeFilePath) -> Bool) = { _ in return false },
+        showCoverageForChangedFiles: Bool = true
     ) {
         self.parseBuildWarnings = parseBuildWarnings
         self.parseBuildErrors = parseBuildErrors
         self.parseAnalyzerWarnings = parseAnalyzerWarnings
         self.parseTestFailures = parseTestFailures
-        self.codeCoverageRequirement = codeCoverageRequirement
         self.reportingFileType = reportingFileType
+        
+        self.codeCoverageRequirement = codeCoverageRequirement
+        self.failIfCoverageUnavailable = shouldFailIfCoverageUnavailable
+        self.excludeCoverageTarget = excludeCoverageTarget
+        self.excludeCoverageForFiles = excludeCoverageForFiles
+        self.showCoverageForChangedFiles = showCoverageForChangedFiles
+        
     }
     
 }

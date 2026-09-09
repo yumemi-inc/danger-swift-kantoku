@@ -13,7 +13,7 @@ let package = Package(
             targets: ["DangerSwiftKantoku"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/danger/swift", from: "3.21.1"),
+        .package(url: "https://github.com/danger/swift", from: "3.23.0"),
         .package(url: "https://github.com/davidahouse/XCResultKit", from: "1.2.2"),
     ],
     targets: [
